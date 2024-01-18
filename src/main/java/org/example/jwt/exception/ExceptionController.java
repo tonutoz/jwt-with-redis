@@ -1,11 +1,7 @@
-package org.example.jwt;
+package org.example.jwt.exception;
 
-import org.example.jwt.exception.AlreadyExistsUserException;
-import org.example.jwt.exception.BadRequestException;
-import org.example.jwt.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

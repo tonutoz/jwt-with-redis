@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 
 import org.example.jwt.security.JwtAccessDeniedHandler;
 import org.example.jwt.security.JwtAuthenticationEntryPoint;
+
+import org.example.jwt.security.JwtAuthenticationFilter;
+import org.example.jwt.security.JwtSecurityConfig;
 import org.example.jwt.security.TokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,50 +32,53 @@ import org.springframework.web.filter.CorsFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final TokenProvider tokenProvider;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    private final CorsFilter corsFilter;
+  private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+  private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
-    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+  private final CorsFilter corsFilter;
 
+  private final TokenProvider tokenProvider;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.csrf(AbstractHttpConfigurer::disable);
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+    httpSecurity.csrf(AbstractHttpConfigurer::disable);
+    httpSecurity.cors(Customizer.withDefaults());
+    //HTTP 기본 인증 비활성화
+    httpSecurity.formLogin(AbstractHttpConfigurer::disable);
+    httpSecurity.httpBasic(AbstractHttpConfigurer::disable);
+    httpSecurity.headers(
+        headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+    httpSecurity.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
+        SessionCreationPolicy.STATELESS));
 
-        httpSecurity.cors(Customizer.withDefaults());
-        //HTTP 기본 인증 비활성화
-        httpSecurity.formLogin(AbstractHttpConfigurer::disable);
-        httpSecurity.httpBasic(AbstractHttpConfigurer::disable);
-        httpSecurity.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
-        httpSecurity.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
-            SessionCreationPolicy.STATELESS));
-        httpSecurity.exceptionHandling((exceptionHandling) -> exceptionHandling
-            .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-            .accessDeniedHandler(jwtAccessDeniedHandler)
-        );
+    httpSecurity.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        httpSecurity.addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class);
+    httpSecurity.exceptionHandling((exceptionHandling) -> exceptionHandling
+        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+        .accessDeniedHandler(jwtAccessDeniedHandler)
+    );
 
-        //권한 규칙 구성 시작
-        httpSecurity.authorizeHttpRequests(
-            authorize -> authorize
-                .requestMatchers("/account/sign-up").permitAll()
-                .requestMatchers("/account/sign-in").permitAll()
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/v3/api-docs/**").permitAll()
-                .requestMatchers("/swagger-resources/**").permitAll()
-                .requestMatchers("/webjars/**").permitAll()
-                .anyRequest().authenticated()
-        );
+    //권한 규칙 구성 시작
+    httpSecurity.authorizeHttpRequests(
+        authorize -> authorize
+            .requestMatchers("/account/sign-up").permitAll()
+            .requestMatchers("/account/sign-in").permitAll()
+            .requestMatchers("/api/redis/").permitAll()
+            .requestMatchers("/swagger-ui/**").permitAll()
+            .requestMatchers("/v3/api-docs/**").permitAll()
+            .requestMatchers("/swagger-resources/**").permitAll()
+            .requestMatchers("/webjars/**").permitAll()
+            .anyRequest().authenticated()
+    );
 
-        return httpSecurity.build();
-    }
+    return httpSecurity.build();
+  }
 }

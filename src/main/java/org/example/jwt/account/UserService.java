@@ -6,6 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.jwt.exception.AlreadyExistsUserException;
 import org.example.jwt.exception.BadRequestException;
 import org.example.jwt.exception.UserNotFoundException;
+import org.example.jwt.security.TokenProvider;
+import org.example.jwt.token.RefreshToken;
+import org.example.jwt.token.RefreshTokenRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,10 @@ public class UserService {
   private final UserRepository userRepository;
 
   private final PasswordEncoder encoder;
+
+  private final TokenProvider tokenProvider;
+
+  private final RefreshTokenRepository tokenRepository;
 
   @Transactional
   public JoinResponse createUser(final JoinRequest req) {
@@ -45,15 +52,21 @@ public class UserService {
 
   }
 
-  public LoginResponse doLogin(final LoginRequest req) {
+  @org.springframework.transaction.annotation.Transactional
+  public RefreshToken doLogin(final LoginRequest req) {
 
     User user= userRepository.findByUserId(req.getUserId()).orElseThrow(()->new UserNotFoundException("ERR-002" ,"존재 하지않는 아이디 입니다."));
 
     if(!encoder.matches(req.getPassword(), user.getPassword()))
       throw new BadRequestException("ERR-003","비밀번호가 틀립니다");
 
-    
-    return LoginResponse.builder().userId(user.getUserId()).code("SUCCESS").msg("로그인성공").build();
+    RefreshToken refreshToken =  tokenProvider.createToken(req.getUserId());
+    log.info("refreshToken {}" , refreshToken);
+    // 로그인 시 토큰 정보를 redis에서 delete함
+    tokenRepository.delete(refreshToken);
+    tokenRepository.save(refreshToken);
+
+    return refreshToken;
 
   }
 

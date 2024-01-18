@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/account/")
 public class UserController {
 
-
   private final UserService userService;
 
   @PostMapping("/sign-up")
@@ -30,8 +29,7 @@ public class UserController {
   @PostMapping("/sign-in")
   public ResponseEntity<?> signIn(@Valid  @RequestBody final LoginRequest req) {
     log.info("signIn start");
-    LoginResponse response = userService.doLogin(req);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(userService.doLogin(req));
   }
 
 

@@ -4,6 +4,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.example.jwt.token.RefreshToken;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,34 +26,50 @@ public class TokenProvider implements InitializingBean {
 
    private static final String AUTHORITIES_KEY = "auth";
 
-   @Value("${jwt.secret}")
-   private String secret;
-
-   @Value("${jwt.token-validity-in-seconds}")
-   private long tokenValidityInMilliseconds;
    private Key key;
+
+   @Value("${jwt.token.access.expiration}")
+   private long accessTokenInExpirationMs;
+
+   @Value("${jwt.token.refresh.expiration}")
+   private long refreshTokenInExpirationMs;
 
    @Override
    public void afterPropertiesSet() {
-      byte[] keyBytes = Decoders.BASE64.decode(secret);
-      this.key = Keys.hmacShaKeyFor(keyBytes);
+      this.key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
    }
 
-   public String createToken(Authentication authentication) {
-      String authorities = authentication.getAuthorities().stream()
-         .map(GrantedAuthority::getAuthority)
-         .collect(Collectors.joining(","));
+   public RefreshToken createToken(final String userId) {
 
-      long now = (new Date()).getTime();
-      Date validity = new Date(now + this.tokenValidityInMilliseconds * 1000L);
+      Claims claims = Jwts.claims(); // JWT payload 에 저장되는 정보
+      claims.put("userId", userId);
 
-      return Jwts.builder()
-         .setSubject(authentication.getName())
-         .claim(AUTHORITIES_KEY, authorities)
-         .signWith(key, SignatureAlgorithm.HS512)
-         .setExpiration(validity)
-         .compact();
+      Date now = new Date();
+
+      String accessToken = Jwts.builder()
+          .setClaims(claims) // 정보 저장
+          .setIssuedAt(now) // 토큰 발행 시간 정보
+          .setExpiration(new Date(now.getTime() + accessTokenInExpirationMs)) // set Expire Time
+          .signWith(key)  // 사용할 암호화 알고리즘과
+          // signature 에 들어갈 secret값 세팅
+          .compact();
+
+      String refreshToken =  Jwts.builder()
+          .setClaims(claims) // 정보 저장
+          .setIssuedAt(now) // 토큰 발행 시간 정보
+          .setExpiration(new Date(now.getTime() + refreshTokenInExpirationMs)) // set Expire Time
+          .signWith(key)  // 사용할 암호화 알고리즘과
+          // signature 에 들어갈 secret값 세팅
+          .compact();
+
+      return RefreshToken.builder()
+          .userId(userId)
+          .refreshToken(accessToken)
+          .accessToken(refreshToken)
+          .build();
+
    }
+
 
    public Authentication getAuthentication(String token) {
       Claims claims = Jwts

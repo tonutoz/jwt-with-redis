@@ -1,4 +1,4 @@
-package org.example.jwt;
+package org.example.jwt.exception;
 
 import lombok.AccessLevel;
 import lombok.Builder;

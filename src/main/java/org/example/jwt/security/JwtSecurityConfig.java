@@ -15,7 +15,7 @@ public class JwtSecurityConfig extends
   @Override
   public void configure(HttpSecurity http) {
     http.addFilterBefore(
-        new JwtFilter(tokenProvider),
+        new JwtAuthenticationFilter(tokenProvider),
         UsernamePasswordAuthenticationFilter.class
     );
   }
