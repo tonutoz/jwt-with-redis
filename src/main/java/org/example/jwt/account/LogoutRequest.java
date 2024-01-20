@@ -1,24 +1,22 @@
-package org.example.jwt.token;
+package org.example.jwt.account;
 
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Token {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class LogoutRequest {
 
   private String userId;
 
   private String refreshToken;
 
-  private String accessToken;
-
   @Builder
-  public Token(String userId, String refreshToken, String accessToken) {
+  public LogoutRequest(String userId, String refreshToken) {
     this.userId = userId;
     this.refreshToken = refreshToken;
-    this.accessToken = accessToken;
   }
+
 }

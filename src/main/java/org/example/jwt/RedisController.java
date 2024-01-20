@@ -7,6 +7,7 @@ import org.example.jwt.token.RefreshToken;
 import org.example.jwt.token.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,22 +22,24 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class RedisController {
 
-  private static final String KEY = "transactions";
-
-  private final StringRedisTemplate template;
-
   private final RefreshTokenService service;
 
   @PostMapping()
   public void addToken(@RequestBody RefreshToken token) {
     log.info("{}",token);
-    service.saveTokenInfo(token.getUserId(),token.getRefreshToken(),token.getAccessToken());
+    service.saveTokenInfo(token.getUserId(),token.getRefreshToken());
 
   }
 
-  @DeleteMapping("{accessToken}")
-  public void getKeyValues(@PathVariable final String accessToken) {
-    service.removeRefreshToken(accessToken);
+  @DeleteMapping("{refreshToken}")
+  public void getKeyValues(@PathVariable final String refreshToken) {
+    service.removeRefreshToken(refreshToken);
   }
+
+  @GetMapping("{refreshToken}")
+  public ResponseEntity<?> getRefreshToken(@PathVariable String refreshToken) {
+    return ResponseEntity.ok(service.findRefreshToken(refreshToken));
+  }
+
 
 }

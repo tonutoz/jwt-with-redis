@@ -1,8 +1,12 @@
-package org.example.jwt.account;
+package org.example.jwt.auth;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.jwt.account.JoinRequest;
+import org.example.jwt.account.LogoutRequest;
+import org.example.jwt.account.LoginRequest;
+import org.example.jwt.account.UserService;
 import org.example.jwt.token.RefreshToken;
 import org.example.jwt.token.Token;
 import org.springframework.http.HttpHeaders;
@@ -17,36 +21,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/account/")
-public class UserController {
+@RequestMapping("/auth/")
+public class AuthController {
 
-  private final UserService userService;
+  private final AuthService authService;
 
-  @PostMapping("/sign-up")
+  @PostMapping("/reissue")
   @ResponseStatus(HttpStatus.CREATED)
-  public ResponseEntity<?> signUp(@Valid  @RequestBody final JoinRequest req) {
-    log.info("signUp start");
-    return ResponseEntity.ok(userService.createUser(req));
-  }
+  public ResponseEntity<?> signUp(@Valid  @RequestBody final AuthRequest req) {
+    log.info("reissue start");
 
-  @PostMapping("/sign-in")
-  public ResponseEntity<?> signIn(@Valid  @RequestBody final LoginRequest req) {
-    log.info("signIn start");
-
-    Token token = userService.doLogin(req);
+    Token token = authService.reIssueToken(req.getRefreshToken());
 
     HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.add("Authorization", "Bearer " + token.getAccessToken());
 
     return new ResponseEntity<>(token, httpHeaders, HttpStatus.OK);
+
   }
-
-  @PostMapping("/log-out")
-  public ResponseEntity<?> logOut(@Valid  @RequestBody final LogoutRequest req) {
-    log.info("log-out start");
-    return ResponseEntity.ok(userService.doLogOut(req));
-  }
-
-
 
 }

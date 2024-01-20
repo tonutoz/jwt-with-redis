@@ -59,8 +59,8 @@ public class SecurityConfig {
     httpSecurity.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
         SessionCreationPolicy.STATELESS));
 
-    httpSecurity.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+   httpSecurity.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+   // httpSecurity.addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class);
     httpSecurity.exceptionHandling((exceptionHandling) -> exceptionHandling
         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         .accessDeniedHandler(jwtAccessDeniedHandler)
@@ -71,7 +71,8 @@ public class SecurityConfig {
         authorize -> authorize
             .requestMatchers("/account/sign-up").permitAll()
             .requestMatchers("/account/sign-in").permitAll()
-            .requestMatchers("/api/redis/").permitAll()
+            //.requestMatchers("/api/redis/").permitAll()
+            .requestMatchers("/auth/reissue").permitAll()
             .requestMatchers("/swagger-ui/**").permitAll()
             .requestMatchers("/v3/api-docs/**").permitAll()
             .requestMatchers("/swagger-resources/**").permitAll()

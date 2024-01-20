@@ -9,6 +9,7 @@ import org.example.jwt.exception.UserNotFoundException;
 import org.example.jwt.security.TokenProvider;
 import org.example.jwt.token.RefreshToken;
 import org.example.jwt.token.RefreshTokenRepository;
+import org.example.jwt.token.Token;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,8 +43,6 @@ public class UserService {
 
     userRepository.saveAndFlush(user);
 
-    log.debug("zzzzzzzzzzzzz1");
-
     return JoinResponse.builder()
         .userId(user.getUserId())
         .code("SUCCESS")
@@ -53,22 +52,39 @@ public class UserService {
   }
 
   @org.springframework.transaction.annotation.Transactional
-  public RefreshToken doLogin(final LoginRequest req) {
+  public Token doLogin(final LoginRequest req) {
 
     User user= userRepository.findByUserId(req.getUserId()).orElseThrow(()->new UserNotFoundException("ERR-002" ,"존재 하지않는 아이디 입니다."));
 
     if(!encoder.matches(req.getPassword(), user.getPassword()))
       throw new BadRequestException("ERR-003","비밀번호가 틀립니다");
 
-    RefreshToken refreshToken =  tokenProvider.createToken(req.getUserId());
-    log.info("refreshToken {}" , refreshToken);
+    Token token =  tokenProvider.createToken(req.getUserId(), user.getUserRole());
+    log.info("token {}" , token);
     // 로그인 시 토큰 정보를 redis에서 delete함
+
+    RefreshToken refreshToken= RefreshToken.builder()
+        .userId(token.getUserId())
+        .refreshToken(token.getRefreshToken())
+        .build();
+
     tokenRepository.delete(refreshToken);
     tokenRepository.save(refreshToken);
 
-    return refreshToken;
-
+    return token;
   }
 
+  public LogoutResponse doLogOut(final LogoutRequest req) {
+
+    RefreshToken refreshToken = tokenRepository.findByRefreshToken(req.getRefreshToken()).orElseThrow(()->new UserNotFoundException("ERR-003" ,"토큰 정보가 존재하지않습니다."));
+
+    tokenRepository.delete(refreshToken);
+
+    return LogoutResponse.builder()
+        .userId(req.getUserId())
+        .code("SUCCESS")
+        .msg("성공적으로 로그아웃하였습니다.")
+        .build();
+  }
 
 }
